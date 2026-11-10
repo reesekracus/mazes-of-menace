@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Mazes of Menace</string>
+    <string name="title_activity_main">Mazes of Menace</string>
+    <string name="package_name">io.github.reesekracus.mazesofmenace</string>
+    <string name="custom_url_scheme">io.github.reesekracus.mazesofmenace</string>
+</resources>

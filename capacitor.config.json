@@ -1,0 +1,7 @@
+{
+  "appId": "io.github.reesekracus.mazesofmenace",
+  "appName": "Mazes of Menace",
+  "webDir": "dist/50",
+  "android": { "backgroundColor": "#0d0f12" },
+  "plugins": { "SplashScreen": { "launchShowDuration": 0 } }
+}

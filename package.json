@@ -1,0 +1,19 @@
+{
+  "name": "mazes-of-menace",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Mazes of Menace: NetHack 5.0 for phones (touch UI, Android app via Capacitor)",
+  "license": "SEE LICENSE IN LICENSE",
+  "scripts": {
+    "assemble": "tools/assemble.sh 5.0 dist/50",
+    "android:sync": "tools/assemble.sh 5.0 dist/50 && npx cap sync android"
+  },
+  "dependencies": {
+    "@capacitor/android": "^8.6.0",
+    "@capacitor/app": "^8.1.2",
+    "@capacitor/cli": "^8.6.0",
+    "@capacitor/core": "^8.6.0",
+    "@capacitor/haptics": "^8.0.2",
+    "@capacitor/status-bar": "^8.0.4"
+  }
+}

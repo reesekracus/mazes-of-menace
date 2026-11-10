@@ -1,0 +1,106 @@
+# Builds NetHack 5.0 (WebAssembly), the tilesheets, the web app and the Android APK from source.
+# Push a tag like v1.0.0 to make a signed GitHub Release; any push to main or a manual run makes a test build
+# (download it from the run's Artifacts).
+name: Build
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: '21' }
+      - uses: actions/setup-node@v4
+        with: { node-version: '22', cache: npm }
+      - run: pip install --quiet pillow
+
+      - name: Cache emsdk and NetHack build
+        uses: actions/cache@v4
+        with:
+          path: build50
+          key: nethack50-${{ hashFiles('patches/nethack-5.0.0-wasm.patch', 'tools/build50.sh', 'tools/*.py') }}
+
+      - name: Build NetHack 5.0 (WebAssembly) and tilesheets
+        run: |
+          rm -rf build50/out
+          bash tools/build50.sh build50
+          mkdir -p vendor50
+          cp build50/out/nethack.js build50/out/nethack.wasm build50/out/tiles16.png build50/out/tiles-dawnlike.png vendor50/
+          cp build50/out/nh50consts.js web/js/
+
+      - name: Art and web app
+        run: |
+          python3 art/make_art.py art/out
+          bash tools/assemble.sh 5.0 dist/50
+
+      - name: Version from tag
+        run: |
+          V="${GITHUB_REF_NAME#v}"
+          if [[ "$GITHUB_REF_TYPE" == tag && "$V" =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
+            echo "MOM_VERSION_NAME=$V" >> "$GITHUB_ENV"
+            echo "MOM_VERSION_CODE=$(( BASH_REMATCH[1]*10000 + BASH_REMATCH[2]*100 + BASH_REMATCH[3] ))" >> "$GITHUB_ENV"
+          else
+            echo "MOM_VERSION_NAME=0.0.${GITHUB_RUN_NUMBER}-test" >> "$GITHUB_ENV"
+            echo "MOM_VERSION_CODE=1" >> "$GITHUB_ENV"
+          fi
+
+      - name: Android APK
+        env:
+          KEYSTORE_B64: ${{ secrets.MOM_KEYSTORE_B64 }}
+          MOM_STORE_PASSWORD: ${{ secrets.MOM_STORE_PASSWORD }}
+          MOM_KEY_PASSWORD: ${{ secrets.MOM_KEY_PASSWORD }}
+          MOM_KEY_ALIAS: ${{ secrets.MOM_KEY_ALIAS }}
+        run: |
+          npm ci
+          npx cap sync android
+          if [ -n "$KEYSTORE_B64" ]; then
+            echo "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/release.jks"
+            export MOM_KEYSTORE="$RUNNER_TEMP/release.jks"
+          fi
+          (cd android && ./gradlew --no-daemon assembleRelease)
+          mkdir -p release
+          APK=android/app/build/outputs/apk/release/app-release.apk
+          [ -f "$APK" ] || APK=android/app/build/outputs/apk/release/app-release-unsigned.apk
+          cp "$APK" "release/mazes-of-menace-$MOM_VERSION_NAME.apk"
+          (cd dist/50 && zip -qr "../../release/mazes-of-menace-web-$MOM_VERSION_NAME.zip" .)
+          ls -la release
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mazes-of-menace-${{ env.MOM_VERSION_NAME }}
+          path: release/
+
+      - name: GitHub Release (tags only)
+        if: github.ref_type == 'tag'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: release/*
+          generate_release_notes: true
+
+      - uses: actions/upload-pages-artifact@v3
+        if: github.ref_type == 'tag'
+        with: { path: dist/50 }
+
+  # Web version on GitHub Pages (turn on: repo Settings -> Pages -> Source: GitHub Actions).
+  pages:
+    if: github.ref_type == 'tag'
+    needs: build
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    environment: { name: github-pages, url: '${{ steps.deploy.outputs.page_url }}' }
+    steps:
+      - id: deploy
+        uses: actions/deploy-pages@v4
