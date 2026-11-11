@@ -135,3 +135,56 @@ pre.text.dump { font-size: 10.5px; line-height: 1.3; white-space: pre; overflow-
 .textwin.help b { color: var(--accent); font-weight: 600; }
 #chips button.hint { background: rgba(20,32,44,.92); border-color: #2f5f80; color: #bfe3ff; }
 #start h1 + .sub { text-align: center; margin-top: 6px; }
+
+/* ---------- Larger screens and sideways phones (1.1.0) ----------
+   The upright phone layout above is unchanged. #controls becomes "display: contents" in the
+   sideways layouts so the d-pad and the action buttons can sit in their own columns. */
+:root { --safe-l: env(safe-area-inset-left, 0px); --safe-r: env(safe-area-inset-right, 0px); }
+
+/* Phone, sideways: d-pad at the left edge, action buttons at the right edge, map in the middle
+   with status + latest messages in a slim strip above it. */
+@media (orientation: landscape) and (max-height: 540px) {
+  #app { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; grid-template-rows: auto auto minmax(0, 1fr);
+         grid-template-areas: "dpad status actions" "dpad msgs actions" "dpad map actions"; }
+  #controls { display: contents; }
+  #status { grid-area: status; font-size: 11px; line-height: 1.3; padding: 3px 8px; }
+  #msgs { grid-area: msgs; font-size: 12px; min-height: calc(2 * 1.35em + 6px); max-height: calc(2 * 1.35em + 6px); padding: 3px 8px; }
+  #mapwrap { grid-area: map; }
+  #dpad { grid-area: dpad; align-self: stretch; align-content: center; padding: 6px 8px calc(6px + var(--safe-b)) calc(8px + var(--safe-l));
+          background: var(--panel); border-right: 1px solid var(--line); grid-template-columns: repeat(3, 44px); grid-template-rows: repeat(3, 44px); }
+  #actions { grid-area: actions; align-self: stretch; align-content: center; overflow-y: auto; padding: 6px calc(8px + var(--safe-r)) calc(6px + var(--safe-b)) 8px;
+             background: var(--panel); border-left: 1px solid var(--line); grid-template-columns: repeat(2, 74px); grid-auto-rows: 42px; }
+}
+
+/* Tablet, sideways: status and a tall message log on the left, map in the middle,
+   action buttons (top) and d-pad (bottom) on the right. */
+@media (orientation: landscape) and (min-height: 541px) {
+  #app { display: grid; grid-template-columns: minmax(220px, 24vw) minmax(0, 1fr) minmax(250px, 24vw); grid-template-rows: auto minmax(0, 1fr) auto;
+         grid-template-areas: "status map actions" "msgs map actions" "msgs map dpad"; padding-left: var(--safe-l); padding-right: var(--safe-r); }
+  #controls { display: contents; }
+  #status { grid-area: status; font-size: 13px; padding: 8px 10px; border-right: 1px solid var(--line); }
+  #msgs { grid-area: msgs; min-height: 0; max-height: none; font-size: 14px; padding: 6px 10px; overflow-y: auto; justify-content: flex-start;
+          border-bottom: 0; border-right: 1px solid var(--line); }
+  #msgs .m:first-child { margin-top: auto; }
+  #mapwrap { grid-area: map; }
+  #actions { grid-area: actions; align-content: start; padding: 10px; background: var(--panel); border-left: 1px solid var(--line);
+             grid-template-columns: repeat(3, 1fr); grid-auto-rows: 52px; gap: 6px; }
+  #actions button { font-size: 14px; }
+  #dpad { grid-area: dpad; justify-content: center; padding: 10px 10px calc(14px + var(--safe-b));
+          background: var(--panel); border-left: 1px solid var(--line); grid-template-columns: repeat(3, 64px); grid-template-rows: repeat(3, 64px); gap: 6px; }
+  #dpad button { font-size: 22px; }
+  #sheetcard { max-width: 640px; margin: 0 auto; border-radius: 16px 16px 0 0; }
+}
+
+/* Tablet, upright: the phone layout, with a bigger d-pad, more message lines and the
+   controls kept to a comfortable width. */
+@media (orientation: portrait) and (min-width: 600px) {
+  #status { font-size: 14px; padding: 8px 14px; }
+  #msgs { font-size: 15px; min-height: calc(4 * 1.35em + 8px); max-height: calc(4 * 1.35em + 8px); padding: 4px 14px; }
+  #controls { justify-content: center; gap: 16px; padding: 12px 14px calc(12px + var(--safe-b)); }
+  #dpad { grid-template-columns: repeat(3, 60px); grid-template-rows: repeat(3, 60px); gap: 6px; }
+  #dpad button { font-size: 22px; }
+  #actions { flex: 0 1 520px; grid-auto-rows: 60px; gap: 6px; }
+  #actions button { font-size: 15px; }
+  #sheetcard { max-width: 720px; margin: 0 auto; }
+}

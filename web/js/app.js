@@ -249,7 +249,7 @@ function setFont(px, anchorX, anchorY) {
   placeCamera();
   requestDraw();
 }
-window.addEventListener('resize', () => { placeCamera(); });
+window.addEventListener('resize', () => { placeCamera(); requestDraw(); });
 
 /* ---------------- input queue ---------------- */
 const inputQ = [];
@@ -367,9 +367,13 @@ window.addEventListener('keydown', (e) => {
 /* ---------------- status & messages ---------------- */
 const msgLog = [];
 let msgCut = 0;
+// Tablets held sideways show a tall message log on the left (same query as style.css).
+const TALL_LOG = matchMedia('(orientation: landscape) and (min-height: 541px)');
+TALL_LOG.addEventListener?.('change', () => renderMsgs());
 function renderMsgs() {
   const box = $('#msgs');
-  box.replaceChildren(...msgLog.slice(-4).map((m, i, arr) => el('div', { class: 'm' + (msgLog.length - arr.length + i < msgCut ? ' old' : '') }, m)));
+  box.replaceChildren(...msgLog.slice(TALL_LOG.matches ? -60 : -4).map((m, i, arr) => el('div', { class: 'm' + (msgLog.length - arr.length + i < msgCut ? ' old' : '') }, m)));
+  if (TALL_LOG.matches) box.scrollTop = box.scrollHeight;
 }
 function addMsg(s) {
   if (!s) return;
