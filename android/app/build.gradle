@@ -8,7 +8,7 @@ android {
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         // Set by the release workflow from the git tag (v1.2.3 -> 10203 / "1.2.3").
-        versionCode (System.getenv("MOM_VERSION_CODE") ?: "1").toInteger()
+        versionCode Integer.parseInt(System.getenv("MOM_VERSION_CODE") ?: "1")
         versionName System.getenv("MOM_VERSION_NAME") ?: "1.0.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
