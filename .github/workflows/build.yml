@@ -69,6 +69,9 @@ jobs:
         run: |
           npm ci
           npx cap sync android
+          if [ "${{ steps.ver.outputs.release }}" = true ] && [ -z "$KEYSTORE_B64" ]; then
+            echo "::error::Release build but the MOM_KEYSTORE_B64 secret is empty or missing"; exit 1
+          fi
           if [ -n "$KEYSTORE_B64" ]; then
             echo "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/release.jks"
             export MOM_KEYSTORE="$RUNNER_TEMP/release.jks"
@@ -90,7 +93,8 @@ jobs:
         if: steps.ver.outputs.release == 'true'
         run: |
           BT="$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)"
-          "$BT/apksigner" verify --print-certs release/*.apk | head -3
+          "$BT/apksigner" verify --print-certs release/*.apk > "$RUNNER_TEMP/sig.txt"
+          head -3 "$RUNNER_TEMP/sig.txt"
 
       - name: Tag and GitHub Release
         if: steps.ver.outputs.release == 'true'
