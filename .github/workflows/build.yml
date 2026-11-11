@@ -20,6 +20,7 @@ jobs:
     timeout-minutes: 60
     outputs:
       release: ${{ steps.ver.outputs.release }}
+      pages: ${{ steps.ver.outputs.release == 'true' || github.event_name == 'workflow_dispatch' }}
     steps:
       - uses: actions/checkout@v4
 
@@ -107,12 +108,13 @@ jobs:
           generate_release_notes: true
 
       - uses: actions/upload-pages-artifact@v3
-        if: steps.ver.outputs.release == 'true'
+        if: steps.ver.outputs.release == 'true' || github.event_name == 'workflow_dispatch'
         with: { path: dist/50 }
 
   # Web version on GitHub Pages (turn on: repo Settings -> Pages -> Source: GitHub Actions).
+  # Deploys on every release, or on a manual run (Actions -> Build -> Run workflow).
   pages:
-    if: needs.build.outputs.release == 'true'
+    if: needs.build.outputs.pages == 'true'
     needs: build
     runs-on: ubuntu-latest
     continue-on-error: true
