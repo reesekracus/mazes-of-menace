@@ -53,6 +53,7 @@ with sync_playwright() as p:
         btns = pg.locator('#actions button').count()
         hidden = pg.evaluate("[...document.querySelectorAll('#actions button')].filter(b => { const r = b.getBoundingClientRect(); return r.bottom > innerHeight || r.right > innerWidth; }).length")
         check(f'{label}: all {btns} action buttons visible', hidden == 0, f'{hidden} off-screen')
+        pg.screenshot(path=f'{shots}/layout-{label}.png')
         if label == 'phone-side':
             check('phone-side: d-pad left of map, buttons right of map', d['r'] <= m['l'] and a['l'] >= m['r'], str(r))
             check('phone-side: status and messages above the map', s['b'] <= g['t'] + 1 and g['b'] <= m['t'] + 1 and s['l'] >= d['r'] - 1, str(r))
@@ -64,8 +65,21 @@ with sync_playwright() as p:
             check('tablet-side: status panel fits its text', s['b'] - s['t'] < 200, str(s))
         if label in ('phone-up', 'tablet-up'):
             check(f'{label}: upright stack (status, messages, map, controls)', s['b'] <= g['t'] + 1 and g['b'] <= m['t'] + 1 and m['b'] <= min(d['t'], a['t']) + 1, str(r))
+        if label.endswith('side'):
+            pg.locator('#actions button[data-act="Inventory"]').click(); pg.wait_for_selector('#sheet:not([hidden])')
+            c = pg.evaluate("(() => { const b = document.querySelector('#sheetcard').getBoundingClientRect(); return [Math.round(b.left), Math.round(b.right), Math.round(b.top), Math.round(b.bottom)]; })()")
+            check(f'{label}: menus open as a right-side panel', c[0] >= w * 0.35 and c[1] >= w - 1 and c[2] <= 1 and c[3] >= h - 1, str(c))
+            pg.locator('#sheetbtns button', has_text='Close').first.click() if pg.locator('#sheetbtns button', has_text='Close').count() else pg.locator('#sheetbtns button').last.click()
+            pg.wait_for_timeout(300)
+            pg.evaluate("document.body.classList.add('swap')"); pg.wait_for_timeout(200)
+            r2 = pg.evaluate("(() => Object.fromEntries(['#mapwrap', '#dpad', '#actions'].map(s => { const b = document.querySelector(s).getBoundingClientRect(); return [s.slice(1), [Math.round(b.left), Math.round(b.right)]]; })))()")
+            if label == 'phone-side':
+                check('phone-side: Swap sides puts the d-pad right, buttons left', r2['dpad'][0] >= r2['mapwrap'][1] and r2['actions'][1] <= r2['mapwrap'][0], str(r2))
+            else:
+                check('tablet-side: Swap sides moves the controls to the left', r2['dpad'][1] <= r2['mapwrap'][0] and r2['actions'][1] <= r2['mapwrap'][0], str(r2))
+            pg.screenshot(path=f'{shots}/layout-{label}-swap.png')
+            pg.evaluate("document.body.classList.remove('swap')")
         check(f'{label}: no page errors', not errors, ' | '.join(errors[:3]))
-        pg.screenshot(path=f'{shots}/layout-{label}.png')
         ctx.close()
     b.close()
 srv.shutdown()

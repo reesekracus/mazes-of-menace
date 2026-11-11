@@ -919,6 +919,10 @@ function openSettings() {
       }),
       el('div', { class: 'cmd', onclick: () => openHelp(null, openSettings) }, el('span', {}, 'Help and how to play'), el('span', { class: 'key' }, '›')),
       el('div', { class: 'cmd', onclick: () => openQuickbarEditor() }, el('span', {}, 'Customize the action buttons'), el('span', { class: 'key' }, '›')),
+      CAP?.ScreenOrientation ? el('div', { class: 'cmd', onclick: () => {
+        prefs.screen = { auto: 'portrait', portrait: 'landscape' }[prefs.screen || 'auto'] || 'auto'; savePrefs(); applyOrientation(); openSettings();
+      } }, el('span', {}, 'Screen direction (tap to switch)'), el('span', { class: 'key' }, SCREEN_NAMES[prefs.screen || 'auto'])) : null,
+      row('Swap sides when sideways (left-handed)', !!prefs.swap, () => { prefs.swap = !prefs.swap; savePrefs(); applySwap(); }),
       row('Vibrate when you take damage', prefs.haptics !== false, () => { prefs.haptics = prefs.haptics === false; savePrefs(); }),
       row('Auto-save when the app is hidden', prefs.autosave !== false, () => { prefs.autosave = prefs.autosave === false; savePrefs(); }),
       V50 ? row('Offer the NetHack tutorial at new game', prefs.tutorial !== false, () => { prefs.tutorial = prefs.tutorial === false; savePrefs(); }) : null,
@@ -1389,8 +1393,20 @@ function androidBack() {
   if (!$('#start').hidden) { CAP?.App?.exitApp(); return; }
   if (gameState === 'playing' && keyWaiter) pushKeys('S');
 }
+// Screen direction (app only): follow the phone's auto-rotate, or lock upright / sideways.
+const SCREEN_NAMES = { auto: 'Auto-rotate', portrait: 'Upright', landscape: 'Sideways' };
+function applyOrientation() {
+  const so = CAP?.ScreenOrientation;
+  if (!so) return;
+  const want = prefs.screen || 'auto';
+  (want === 'auto' ? so.unlock() : so.lock({ orientation: want })).catch(() => {});
+}
+// Left-handed option: in the sideways layouts the d-pad and the action buttons trade sides.
+function applySwap() { document.body.classList.toggle('swap', !!prefs.swap); }
 function androidSetup() {
+  applySwap();
   if (!CAP) return;
+  applyOrientation();
   CAP.App?.addListener('backButton', androidBack);
   CAP.StatusBar?.setOverlaysWebView({ overlay: false }).catch(() => {});
   CAP.StatusBar?.setBackgroundColor({ color: '#0d0f12' }).catch(() => {});

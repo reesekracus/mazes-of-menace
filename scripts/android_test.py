@@ -17,11 +17,12 @@ threading.Thread(target=srv.serve_forever, daemon=True).start()
 url = f'http://127.0.0.1:{srv.server_address[1]}/index.html'
 
 FAKE = """
-window.__hap = []; window.__exited = false; window.__sb = [];
+window.__hap = []; window.__exited = false; window.__sb = []; window.__or = [];
 const ok = () => Promise.resolve();
 window.Capacitor = { isNativePlatform: () => true, Plugins: {
   Haptics: { vibrate: (o) => { window.__hap.push(o.duration); return ok(); } },
   App: { addListener: (n, f) => { if (n === 'backButton') window.__back = f; }, exitApp: () => { window.__exited = true; } },
+  ScreenOrientation: { lock: (o) => { window.__or.push(o.orientation); return ok(); }, unlock: () => { window.__or.push('auto'); return ok(); } },
   StatusBar: { setOverlaysWebView: (o) => { window.__sb.push('overlay'); return ok(); },
                setBackgroundColor: (o) => { window.__sb.push(o.color); return ok(); }, setStyle: (o) => { window.__sb.push(o.style); return ok(); } } } };
 """
@@ -65,6 +66,17 @@ with sync_playwright() as p:
             back(); continue                      # Back closes text windows
         if 'Droid' in st(): break
     check('game started; Back cleared intro screens', 'Droid' in st() and not sheet_open(), title() or st()[:80])
+
+    check('screen direction follows auto-rotate at start', pg.evaluate('window.__or') == ['auto'], str(pg.evaluate('window.__or')))
+    pg.locator('#actions button.more').click(); pg.locator('#sheetbody .cmd', has_text='Settings').click()
+    for want in ('Upright', 'Sideways', 'Auto-rotate'):
+        pg.locator('#sheetbody .cmd', has_text='Screen direction').click(); pg.wait_for_timeout(150)
+        check(f'Settings: screen direction switches to {want}', want in pg.locator('#sheetbody .cmd', has_text='Screen direction').inner_text())
+    check('screen direction calls the plugin', pg.evaluate('window.__or') == ['auto', 'portrait', 'landscape', 'auto'], str(pg.evaluate('window.__or')))
+    pg.locator('#sheetbody .cmd', has_text='Swap sides').click(); pg.wait_for_timeout(150)
+    check('Settings: Swap sides sets the left-handed layout', pg.evaluate("document.body.classList.contains('swap')"))
+    pg.locator('#sheetbody .cmd', has_text='Swap sides').click(); pg.wait_for_timeout(150)
+    pg.locator('#sheetbtns button', has_text='Done').click(); pg.wait_for_timeout(200)
 
     pg.locator('#actions button[data-act="Inventory"]').click(); pg.wait_for_selector('#sheet:not([hidden])')
     back(); pg.wait_for_timeout(300)
