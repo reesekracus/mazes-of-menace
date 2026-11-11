@@ -8,7 +8,7 @@ Android app plus a web version. Free and open source under the NetHack General P
 - **Web:** the GitHub Pages link in the repository's About box (when enabled).
 
 ## Build from source
-Releases are built by GitHub Actions (`.github/workflows/build.yml`). To build by hand (Linux, Python 3 with Pillow, Node 22, JDK 21, Android SDK 36):
+Releases are built by GitHub Actions (`.github/workflows/build.yml`): change `VERSION` (e.g. to 1.0.1) and push to main, and the workflow tags the commit and publishes a signed APK. To build by hand (Linux, Python 3 with Pillow, Node 22, JDK 21, Android SDK 36):
 
 ```sh
 tools/build50.sh build50                     # emsdk + NetHack 5.0 -> WebAssembly, constants, tilesheets

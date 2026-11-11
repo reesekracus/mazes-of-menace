@@ -1,12 +1,12 @@
 # Builds NetHack 5.0 (WebAssembly), the tilesheets, the web app and the Android APK from source.
-# Push a tag like v1.0.0 to make a signed GitHub Release; any push to main or a manual run makes a test build
-# (download it from the run's Artifacts).
+# To release: change the VERSION file (e.g. 1.0.1) and push to main (or edit it on github.com). If the tag
+# v<VERSION> doesn't exist yet, this run tags the commit and makes a signed GitHub Release.
+# Other pushes and manual runs make test builds (download them from the run's Artifacts).
 name: Build
 
 on:
   push:
     branches: [main]
-    tags: ['v*']
   workflow_dispatch:
 
 permissions:
@@ -18,6 +18,8 @@ jobs:
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 60
+    outputs:
+      release: ${{ steps.ver.outputs.release }}
     steps:
       - uses: actions/checkout@v4
 
@@ -46,15 +48,16 @@ jobs:
           python3 art/make_art.py art/out
           bash tools/assemble.sh 5.0 dist/50
 
-      - name: Version from tag
+      - name: Version (release if VERSION has no tag yet)
+        id: ver
         run: |
-          V="${GITHUB_REF_NAME#v}"
-          if [[ "$GITHUB_REF_TYPE" == tag && "$V" =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
-            echo "MOM_VERSION_NAME=$V" >> "$GITHUB_ENV"
-            echo "MOM_VERSION_CODE=$(( BASH_REMATCH[1]*10000 + BASH_REMATCH[2]*100 + BASH_REMATCH[3] ))" >> "$GITHUB_ENV"
+          V="$(tr -d ' \n' < VERSION)"
+          [[ "$V" =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)$ ]] || { echo "VERSION must look like 1.2.3"; exit 1; }
+          echo "MOM_VERSION_CODE=$(( BASH_REMATCH[1]*10000 + BASH_REMATCH[2]*100 + BASH_REMATCH[3] ))" >> "$GITHUB_ENV"
+          if [ "$GITHUB_REF" = refs/heads/main ] && [ -z "$(git ls-remote --tags origin "v$V")" ]; then
+            echo "MOM_VERSION_NAME=$V" >> "$GITHUB_ENV"; echo "release=true" >> "$GITHUB_OUTPUT"
           else
-            echo "MOM_VERSION_NAME=0.0.${GITHUB_RUN_NUMBER}-test" >> "$GITHUB_ENV"
-            echo "MOM_VERSION_CODE=1" >> "$GITHUB_ENV"
+            echo "MOM_VERSION_NAME=$V-test.$GITHUB_RUN_NUMBER" >> "$GITHUB_ENV"; echo "release=false" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Android APK
@@ -83,20 +86,29 @@ jobs:
           name: mazes-of-menace-${{ env.MOM_VERSION_NAME }}
           path: release/
 
-      - name: GitHub Release (tags only)
-        if: github.ref_type == 'tag'
+      - name: Check the APK is signed (releases only)
+        if: steps.ver.outputs.release == 'true'
+        run: |
+          BT="$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)"
+          "$BT/apksigner" verify --print-certs release/*.apk | head -3
+
+      - name: Tag and GitHub Release
+        if: steps.ver.outputs.release == 'true'
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: v${{ env.MOM_VERSION_NAME }}
+          target_commitish: ${{ github.sha }}
+          name: Mazes of Menace ${{ env.MOM_VERSION_NAME }}
           files: release/*
           generate_release_notes: true
 
       - uses: actions/upload-pages-artifact@v3
-        if: github.ref_type == 'tag'
+        if: steps.ver.outputs.release == 'true'
         with: { path: dist/50 }
 
   # Web version on GitHub Pages (turn on: repo Settings -> Pages -> Source: GitHub Actions).
   pages:
-    if: github.ref_type == 'tag'
+    if: needs.build.outputs.release == 'true'
     needs: build
     runs-on: ubuntu-latest
     continue-on-error: true
