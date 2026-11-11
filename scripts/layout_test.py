@@ -17,7 +17,7 @@ srv = socketserver.TCPServer(('127.0.0.1', 0), functools.partial(Q, directory=si
 threading.Thread(target=srv.serve_forever, daemon=True).start()
 url = f'http://127.0.0.1:{srv.server_address[1]}/index.html'
 
-SIZES = {'phone-up': (393, 851), 'phone-side': (851, 393), 'tablet-up': (800, 1280), 'tablet-side': (1280, 800)}
+SIZES = {'phone-up': (393, 851), 'narrow-up': (360, 780), 'phone-side': (851, 393), 'tablet-up': (800, 1280), 'tablet-side': (1280, 800)}
 results = []
 def check(name, ok, info=''):
     results.append(bool(ok))
@@ -30,6 +30,8 @@ with sync_playwright() as p:
         pg = ctx.new_page(); errors = []
         pg.on('pageerror', lambda e: errors.append(str(e)))
         pg.goto(url); pg.wait_for_selector('#newgame:not([disabled])', timeout=30000)
+        lt = pg.evaluate("document.querySelector('#logo').getBoundingClientRect().top + document.querySelector('#start').scrollTop")
+        check(f'{label}: title art reachable (not above the top)', lt >= 0, str(lt))
         pg.fill('#pname', 'Layout'); pg.click('#newgame'); pg.wait_for_selector('#start', state='hidden', timeout=30000)
         for _ in range(30):
             pg.wait_for_timeout(300)
@@ -63,7 +65,9 @@ with sync_playwright() as p:
             check('tablet-side: buttons above d-pad, right of the map', a['l'] >= m['r'] and d['l'] >= m['r'] and a['b'] <= d['t'] + 1, str(r))
             check('tablet-side: tall message log', g['b'] - g['t'] > h * 0.5, str(g))
             check('tablet-side: status panel fits its text', s['b'] - s['t'] < 200, str(s))
-        if label in ('phone-up', 'tablet-up'):
+        clipped = pg.evaluate("[...document.querySelectorAll('#actions button')].filter(b => b.scrollWidth > b.clientWidth + 1).map(b => b.textContent)")
+        check(f'{label}: action button labels fit', not clipped, str(clipped))
+        if label in ('phone-up', 'narrow-up', 'tablet-up'):
             check(f'{label}: upright stack (status, messages, map, controls)', s['b'] <= g['t'] + 1 and g['b'] <= m['t'] + 1 and m['b'] <= min(d['t'], a['t']) + 1, str(r))
         if label.endswith('side'):
             pg.locator('#actions button[data-act="Inventory"]').click(); pg.wait_for_selector('#sheet:not([hidden])')

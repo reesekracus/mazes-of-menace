@@ -1,0 +1,4 @@
+- Phone and tablet layouts for holding the device sideways, and a bigger tablet layout upright
+- The app follows your phone's auto-rotate; Settings > Screen direction can lock it upright or sideways
+- Swap sides when sideways (left-handed)
+- Menus open as a side panel when sideways, so the map stays visible

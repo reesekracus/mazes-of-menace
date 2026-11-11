@@ -1,0 +1,3 @@
+- Fits narrow phones better: the action buttons no longer squeeze or cut off their labels on 360-pixel-wide screens
+- The title screen no longer hides its top on short screens
+- Store listing (screenshots and descriptions) for app stores such as IzzyOnDroid

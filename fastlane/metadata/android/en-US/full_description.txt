@@ -1,0 +1,21 @@
+Mazes of Menace is NetHack 5.0 for your phone. The game is the real, unmodified NetHack: the same dungeon, monsters, items, rules and endings. Only the interface is new, and it is made for touch. You never need a keyboard.
+
+Descend through the Dungeons of Doom, past the Gnomish Mines, Sokoban and the Oracle, down into Gehennom, to recover the Amulet of Yendor for your god.
+
+Built for touch:
+- A d-pad for moving (hold an arrow to run) and a row of action buttons you can customize
+- Tap the map to travel, long-press to look, drag to pan, pinch to zoom
+- Item questions open your inventory as a list with pictures; no item letters to remember
+- Buttons appear for whatever you are standing on: stairs, fountains, altars, items
+- Every command is in a searchable list, by name
+- Game text that mentions keys is rewritten to name the buttons instead
+
+Also included:
+- DawnLike pixel-art tiles (or NetHack's own tiles, or classic ASCII)
+- Phone and tablet layouts, upright or sideways, with a left-handed option
+- Auto-save when you leave the app, plus backup and restore of your saves
+- The full end-of-game summary, and a list of your past games
+- Vibration and a red warning when your hit points get low
+- Built-in help pages, and NetHack 5.0's own tutorial
+
+Free and open source, with no ads and no tracking. Mazes of Menace is an unofficial port. NetHack is © Stichting Mathematisch Centrum and M. Stephenson, distributed under the NetHack General Public License. DawnLike tiles by DragonDePlatino (Andrew Rios) with the DawnBringer palette, CC BY-SA 3.0.

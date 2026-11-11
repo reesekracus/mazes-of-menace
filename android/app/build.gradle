@@ -28,6 +28,11 @@ android {
             }
         }
     }
+    // No Google "Dependency Info" signing block (app stores like IzzyOnDroid flag it as an unknown blob).
+    dependenciesInfo {
+        includeInApk = false
+        includeInBundle = false
+    }
     buildTypes {
         release {
             if (System.getenv("MOM_KEYSTORE")) signingConfig signingConfigs.release

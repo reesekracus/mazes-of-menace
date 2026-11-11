@@ -42,7 +42,7 @@ button:active { background: #2b323d; }
 #dpad { display: grid; grid-template-columns: repeat(3, 46px); grid-template-rows: repeat(3, 46px); gap: 4px; flex: none; }
 #dpad button { font-size: 18px; padding: 0; }
 #dpad .mid { font-size: 11px; color: var(--dim); }
-#actions { flex: 1; display: grid; grid-template-columns: repeat(4, 1fr); grid-auto-rows: 46px; gap: 4px; }
+#actions { flex: 1; min-width: 0; display: grid; grid-template-columns: repeat(4, 1fr); grid-auto-rows: 46px; gap: 4px; }
 #actions button { font-size: 13px; line-height: 1.15; padding: 2px 4px; display: flex; align-items: center; justify-content: center; text-align: center; }
 #actions .more { background: #2a2414; border-color: #4a3d1c; }
 
@@ -77,9 +77,9 @@ pre.text { font-family: var(--mono); font-size: 12.5px; line-height: 1.4; white-
 .hist { font-family: var(--mono); font-size: 13px; padding: 3px 0; border-bottom: 1px solid #1c2128; }
 
 /* Start screen */
-#start { position: fixed; inset: 0; z-index: 20; background: radial-gradient(ellipse at top, #1b1f27, var(--bg) 70%); display: flex; align-items: center; justify-content: center; overflow-y: auto; padding: 20px; }
+#start { position: fixed; inset: 0; z-index: 20; background: radial-gradient(ellipse at top, #1b1f27, var(--bg) 70%); display: flex; overflow-y: auto; padding: 20px; }
 #start[hidden] { display: none; }
-.startcard { width: 100%; max-width: 380px; display: flex; flex-direction: column; gap: 10px; }
+.startcard { margin: auto; width: 100%; max-width: 380px; display: flex; flex-direction: column; gap: 10px; }
 .startcard h1 { margin: 0; line-height: 0; }
 #logo { display: block; width: 100%; max-width: 360px; height: auto; margin: 0 auto; image-rendering: pixelated; border-radius: 10px; }
 .sub { margin: 0 0 6px; color: var(--dim); font-size: 13px; }
@@ -206,4 +206,12 @@ pre.text.dump { font-size: 10.5px; line-height: 1.3; white-space: pre; overflow-
   #sheetcard { width: min(560px, 55vw); min-width: 340px; max-width: none; height: 100%; max-height: none; margin: 0;
                border-radius: 16px 0 0 16px; border-top: 0; border-left: 1px solid var(--line);
                padding: calc(12px + var(--safe-t)) calc(12px + var(--safe-r)) calc(12px + var(--safe-b)) 12px; }
+}
+
+/* Upright phones up to 420px: a slightly narrower d-pad and 12px labels so four action buttons fit (e.g. "Inventory"). */
+@media (orientation: portrait) and (max-width: 420px) {
+  #controls { gap: 6px; padding-left: 6px; padding-right: 6px; }
+  #dpad { grid-template-columns: repeat(3, 42px); grid-template-rows: repeat(3, 46px); gap: 3px; }
+  #actions { gap: 3px; }
+  #actions button { font-size: 12px; padding: 2px 1px; }
 }
